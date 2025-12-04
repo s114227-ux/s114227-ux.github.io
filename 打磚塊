@@ -1,0 +1,116 @@
+pip install pygame
+import pygame, sys
+
+# 初始化 Pygame
+pygame.init()
+
+# 螢幕設定
+WIDTH, HEIGHT = 600, 400
+screen = pygame.display.set_mode((WIDTH, HEIGHT))
+pygame.display.set_caption("打磚塊遊戲")
+
+# 顏色
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+RED = (255, 0, 0)
+BLUE = (0, 0, 255)
+
+# 球
+ball = pygame.Rect(WIDTH//2 - 10, HEIGHT//2 - 10, 20, 20)
+ball_speed = [4, -4]
+
+# 滑板
+paddle = pygame.Rect(WIDTH//2 - 50, HEIGHT - 30, 100, 10)
+paddle_speed = 0
+
+# 磚塊
+brick_rows = 5
+brick_cols = 8
+brick_width = 70
+brick_height = 20
+bricks = []
+for row in range(brick_rows):
+    for col in range(brick_cols):
+        bricks.append(pygame.Rect(col*brick_width + 5, row*brick_height + 5, brick_width-5, brick_height-5))
+
+# 分數
+score = 0
+font = pygame.font.SysFont(None, 36)
+
+# 遊戲主迴圈
+clock = pygame.time.Clock()
+running = True
+while running:
+    clock.tick(60)
+    screen.fill(BLACK)
+    
+    # 事件處理
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_LEFT:
+                paddle_speed = -6
+            elif event.key == pygame.K_RIGHT:
+                paddle_speed = 6
+        elif event.type == pygame.KEYUP:
+            if event.key in [pygame.K_LEFT, pygame.K_RIGHT]:
+                paddle_speed = 0
+    
+    # 更新滑板位置
+    paddle.x += paddle_speed
+    if paddle.x < 0:
+        paddle.x = 0
+    if paddle.x > WIDTH - paddle.width:
+        paddle.x = WIDTH - paddle.width
+    
+    # 更新球位置
+    ball.x += ball_speed[0]
+    ball.y += ball_speed[1]
+    
+    # 球碰牆
+    if ball.x <= 0 or ball.x >= WIDTH - ball.width:
+        ball_speed[0] = -ball_speed[0]
+    if ball.y <= 0:
+        ball_speed[1] = -ball_speed[1]
+    
+    # 球碰滑板
+    if ball.colliderect(paddle):
+        ball_speed[1] = -ball_speed[1]
+    
+    # 球碰磚塊
+    hit_index = ball.collidelist(bricks)
+    if hit_index != -1:
+        hit_brick = bricks.pop(hit_index)
+        ball_speed[1] = -ball_speed[1]
+        score += 10
+    
+    # 畫磚塊
+    for brick in bricks:
+        pygame.draw.rect(screen, RED, brick)
+    
+    # 畫滑板與球
+    pygame.draw.rect(screen, BLUE, paddle)
+    pygame.draw.ellipse(screen, WHITE, ball)
+    
+    # 顯示分數
+    score_text = font.render(f"Score: {score}", True, WHITE)
+    screen.blit(score_text, (10, HEIGHT - 40))
+    
+    # 判斷遊戲結束
+    if ball.y > HEIGHT:
+        end_text = font.render("Game Over!", True, WHITE)
+        screen.blit(end_text, (WIDTH//2 - 80, HEIGHT//2 - 20))
+        pygame.display.flip()
+        pygame.time.wait(2000)
+        running = False
+    elif not bricks:
+        end_text = font.render("You Win!", True, WHITE)
+        screen.blit(end_text, (WIDTH//2 - 60, HEIGHT//2 - 20))
+        pygame.display.flip()
+        pygame.time.wait(2000)
+        running = False
+    
+    pygame.display.flip()
+python brick_breaker.py
